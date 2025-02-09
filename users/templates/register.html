@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .card-header {
+            background: #fff;
+            color: rgb(0, 0, 255);
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .btn-primary {
+            background: rgb(0, 0, 255);
+            border: none;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: rgb(0, 0, 255);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="card-header">
+            <h3>Regístrate</h3>
+        </div>
+        <div class="card-body">
+            <form id="registerForm" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Registrarse</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("registerForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            var pass1Input = document.querySelector("input[name='password1']");
+            var pass2Input = document.querySelector("input[name='password2']");
+
+            if (!pass1Input || !pass2Input) {
+                console.error("No se encontraron los campos de contraseña.");
+                return;
+            }
+
+            var pass1 = pass1Input.value;
+            var pass2 = pass2Input.value;
+            var regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])/;
+
+            if (pass1 !== pass2) {
+                showAlert("Las contraseñas no coinciden", "error");
+                return;
+            }
+
+            if (pass1.length < 8) {
+                showAlert("La contraseña debe tener al menos 8 caracteres", "error");
+                return;
+            }
+
+            if (!regex.test(pass1)) {
+                showAlert("La contraseña debe contener al menos un número y un símbolo", "error");
+                return;
+            }
+
+            event.target.submit();
+        });
+
+        function showAlert(message, type) {
+            Swal.fire({
+                icon: type,
+                title: 'Error',
+                text: message,
+            });
+        }
+    </script>
+    {% include 'mensaje.html' %}
+</body>
+
+</html>
