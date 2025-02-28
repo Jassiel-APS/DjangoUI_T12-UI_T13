@@ -1,7 +1,8 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.http import JsonResponse
 from .models import Categoria
 from .forms import categoriaForm
+import json
 
 #Debe manejar tres endpoints diferentes, Registrar Categoria, Obtener todas las categorias en JSON y Vista HTML para mostrar categorias
 
@@ -40,3 +41,19 @@ def agregar_categoria(request):
 def lista_categorias_html(request):
     categorias = Categoria.objects.all()
     return render(request,'lista_categorias.html',{'categorias':categorias})
+
+def registrar_c(request):
+    # Checar que estemos manejando un POST
+    if request.method == 'POST':
+        try:
+            # Intentar obtener los datos del body del request
+            data = json.loads(request.body)  # Hace que el parámetro devuelva un JSON
+            categoria = Categoria.objects.create(
+                # Básicamente es un constructor
+                nombre=data['nombre'],
+                imagen=data['imagen']
+            )  # La función create directamente ingresa el modelo a la BD
+            return JsonResponse({'mensaje': 'Registro exitoso', 'id': categoria.id}, status=201)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Metodo no soportado'}, status=405)

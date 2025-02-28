@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Alumnos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body class="container mt-4">
+    <h1 class="text-center mb-4">Gestión de Alumnos</h1>
+
+    <div class="row">
+        <div class="col-6">
+            <div class=" p-4 mb-4">
+                <h4>Nuevo Alumno</h4>
+                <form id="alumnoForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="id" name="id"> <!-- Campo oculto para el ID -->
+
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre:</label>
+                        <input type="text" class="form-control" id="nombre" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="apellido" class="form-label">Apellido:</label>
+                        <input type="text" class="form-control" id="apellido" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edad" class="form-label">Edad:</label>
+                        <input type="number" class="form-control" id="edad" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="matricula" class="form-label">Matrícula:</label>
+                        <input type="text" class="form-control" id="matricula" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="correo" class="form-label">Correo:</label>
+                        <input type="email" class="form-control" id="correo" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-6">
+            <!-- Tabla de Alumnos -->
+            <h2 class="text-center mb-3">Lista de Alumnos</h2>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Edad</th>
+                            <th>Matrícula</th>
+                            <th>Correo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaAlumnos"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Formulario de Alumnos -->
+
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", cargarAlumnos);
+
+        async function cargarAlumnos() {
+            try {
+                let response = await fetch('/alumnos/api/');
+                let alumnos = await response.json();
+                let tbody = document.getElementById("listaAlumnos");
+                tbody.innerHTML = "";
+                alumnos.forEach(alumno => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${alumno.nombre}</td>
+                            <td>${alumno.apellido}</td>
+                            <td>${alumno.edad}</td>
+                            <td>${alumno.matricula}</td>
+                            <td>${alumno.correo}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editarAlumno(${alumno.id}, '${alumno.nombre}', '${alumno.apellido}', ${alumno.edad}, '${alumno.matricula}', '${alumno.correo}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="eliminarAlumno(${alumno.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar alumnos:", error);
+            }
+        }
+
+        document.getElementById("alumnoForm").addEventListener("submit", async function (event) {
+            event.preventDefault(); // Bloquear envío por defecto
+            let id = document.getElementById("id").value;
+            let nombre = document.getElementById("nombre").value;
+            let apellido = document.getElementById("apellido").value;
+            let edad = document.getElementById("edad").value;
+            let matricula = document.getElementById("matricula").value;
+            let correo = document.getElementById("correo").value;
+
+            let alumno = { nombre, apellido, edad, matricula, correo };
+
+            try {
+                let response;
+                if (id) {
+                    // Si hay ID, hacer una actualización (PUT)
+                    response = await fetch(`/alumnos/api/${id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(alumno)
+                    });
+                } else {
+                    // Si no hay ID, crear nuevo alumno (POST)
+                    response = await fetch("/alumnos/api/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(alumno)
+                    });
+                }
+
+                if (response.ok) {
+                    limpiarFormulario();
+                    cargarAlumnos();
+                } else {
+                    console.error("Error al guardar alumno:", response.status);
+                }
+            } catch (error) {
+                console.error("Error en la solicitud:", error);
+            }
+        });
+
+        function editarAlumno(id, nombre, apellido, edad, matricula, correo) {
+            document.getElementById("id").value = id;
+            document.getElementById("nombre").value = nombre;
+            document.getElementById("apellido").value = apellido;
+            document.getElementById("edad").value = edad;
+            document.getElementById("matricula").value = matricula;
+            document.getElementById("correo").value = correo;
+        }
+
+        async function eliminarAlumno(id) {
+            if (confirm("¿Seguro que deseas eliminar este alumno?")) {
+                try {
+                    let response = await fetch(`/alumnos/api/${id}`, { method: "DELETE" });
+                    if (response.ok) {
+                        cargarAlumnos();
+                    } else {
+                        console.error("Error al eliminar alumno:", response.status);
+                    }
+                } catch (error) {
+                    console.error("Error en la solicitud:", error);
+                }
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById("id").value = "";
+            document.getElementById("nombre").value = "";
+            document.getElementById("apellido").value = "";
+            document.getElementById("edad").value = "";
+            document.getElementById("matricula").value = "";
+            document.getElementById("correo").value = "";
+        }
+    </script>
+
+</body>
+
+</html>

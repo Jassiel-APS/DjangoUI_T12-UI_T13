@@ -1,43 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categoría</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <title>Gestión de Categorías</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 </head>
-<body>
-    <h1>Nueva categoria</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}<!-- pintar el formulario con etiquetas-->
-        <button class="btn btn-primary" type="submit">Agregar</button>
-    </form>
-    <br>
-    <h1>    Lista de categorias  </h1>
-    <div id="categorias"></div>
+
+<body class="container mt-4">
+    <h1 class="text-center mb-4">Gestión de Categorías</h1>
+    
+    <div class="row">
+        <!-- Sección del formulario (Izquierda) -->
+        <div class="col-md-5">
+            <h2>Registrar Categoría</h2>
+            <form id="formCategoria">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" id="nombre" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="imagen" class="form-label">URL de la Imagen</label>
+                    <input type="url" id="imagen" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Agregar</button>
+            </form>
+        </div>
+
+        <!-- Sección de categorías (Derecha) -->
+        <div class="col-md-7">
+            <h2>Lista de Categorías</h2>
+            <div id="categorias" class="row"></div>
+        </div>
+    </div>
 
     <script>
-        //Funcion para obtener el JSON
-        function cargarCategorias(){
-            //fetch para obtener info
-            fetch('/categorias/api/get')
+        document.getElementById('formCategoria').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            let nombre = document.getElementById('nombre').value;
+            let imagen = document.getElementById('imagen').value;
+            let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('/categorias/api/post/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ nombre, imagen })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.mensaje) {
+                    cargarCategorias(); // Actualizar la lista
+                    document.getElementById('formCategoria').reset();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        function cargarCategorias() {
+            fetch('/categorias/json/')
                 .then(response => response.json())
                 .then(data => {
                     let div = document.getElementById('categorias');
                     div.innerHTML = '';
                     data.forEach(categoria => {
                         div.innerHTML += `
-                        <p><strong>${categoria.nombre}</strong> -
-                        <br>
-                        <img src="${categoria.imagen}" width="100px"/>
-                        </p>`
+                            <div class="col-md-4">
+                                <div class="card mb-3">
+                                    <img src="${categoria.imagen}" class="card-img-top" alt="${categoria.nombre}">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">${categoria.nombre}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                     });
                 })
-                .catch(error => console.error('Error: ', error));
+                .catch(error => console.error('Error:', error));
         }
-        cargarCategorias();
 
+        cargarCategorias(); // Cargar categorías al inicio
     </script>
+</body>
+
 </html>
