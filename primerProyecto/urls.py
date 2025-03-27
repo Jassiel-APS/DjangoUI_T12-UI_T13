@@ -16,13 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from users.views import login_view  # Importa la vista de login
 
 from app.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', login_view, name='login'),  # Cambia la ruta raíz a la vista de login
+    path('', index, name='index'),
     path('error/', error, name='error'),
     path('onepage/', onepage, name='onepage'),
     path('prueba', prueba, name='prueba'),

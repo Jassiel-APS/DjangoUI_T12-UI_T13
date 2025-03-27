@@ -10,13 +10,19 @@ class productoForm(forms.ModelForm):
         #1) Definir el modelo.
         model = Producto
         #2) Definir los campos que deben aparecer.
-        fields = ['nombre', 'precio', 'imagen']
+        fields = ['nombre', 'precio', 'imagen', 'proveedor']
         #3) Atributos de las etiquetas (Widgets)
         widgets = {
             'nombre': forms.TextInput(
                 attrs={
                     'class': 'form-input',
                     'placeholder': 'Ingrese el nombre del producto'
+                }
+            ),
+            'proveedor': forms.Select(
+                attrs={
+                    'class': 'form-input',
+                    'placeholder': 'Ingrese el nombre del Proveedor'
                 }
             )
         }

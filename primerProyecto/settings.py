@@ -15,7 +15,8 @@ SECRET_KEY = ('DJANGO_SECRET_KEY', 'your-default-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = ('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = '127.0.0.1,localhost'.split(',')
+#ALLOWED_HOSTS = '127.0.0.1,localhost'.split(',')
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -32,9 +33,18 @@ INSTALLED_APPS = [
     'categorias',
     'alumnos',
     'rest_framework',
+    'corsheaders',
+    'rest_framework_simplejwt',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -44,6 +54,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'primerProyecto.urls'
 

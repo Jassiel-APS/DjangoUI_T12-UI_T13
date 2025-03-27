@@ -1,10 +1,16 @@
-from django.urls import path
-from .views import*
-from django.contrib.auth.views import LogoutView
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework.routers import SimpleRouter
+from django.shortcuts import render
+from .views import *
+from django.urls import path, include
 
-urlpatterns =[
-    path('register/', register_view, name='register'),
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
-    path('home/', home_view, name='home'),
+router = SimpleRouter()
+router.register(r'api', UserViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+    #Este es el Path para iniciar sesión
+    path('token/', CustomTokenObtainPairView.as_view(), name="token"),
+    path('token/refresh/', TokenRefreshView.as_view(), name="refresh"),
+    path('form/', CustomUserFormAPI.as_view(), name="form"),
 ]

@@ -1,41 +1,70 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login,aauthenticate,logout
-from .forms import CustomUserCreationForm, CustomUserLoginForm
-from django.contrib.auth.decorators import login_required
+from .models import CustomUser
+from rest_framework.renderers import JSONRenderer
+from rest_framework import viewsets
+from .serializers import CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .serializers import CustomUserSerializer
 
-def register_view(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-           user = form.save()
-           login(request, user)
-           return redirect('home')
-    else:
+# Clase que maneja las vistas GET, POST, PUT, DELETE
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    renderer_classes = [JSONRenderer]
+    serializer_class = CustomUserSerializer
+
+    # Variables para autenticación
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'DELETE']:
+            return [IsAuthenticated()]
+        return []
+
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """ Vista que genera y envía el token JWT """
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+from django.contrib.auth import get_user_model
+from .forms import CustomUserCreationForm  # Corregido el nombre de la importación
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView  # Corregido 'vies' a 'views'
+
+
+class CustomUserFormAPI(APIView):
+    def get(self, request, *args, **kwargs):
+        """ Obtiene los campos del formulario y los devuelve como JSON """
         form = CustomUserCreationForm()
-    return render(request, 'register.html', {'form': form})
+        fields = {
+            field: {
+                'label': form[field].label,
+                'input': form[field].field.widget.attrs,  # Corregido 'widgets' a 'widget'
+                'type': form[field].field.widget.input_type,
+            }
+            for field in form.fields
+        }
+        return Response(fields)
 
-def login_view(request):
-    message = request.session.pop('logout_message', None)  # Recupera y elimina el mensaje después de mostrarlo
-    form = CustomUserLoginForm(data=request.POST or None)
+    def post(self, request, *args, **kwargs):
+        """ Recibe los datos del formulario, valida y crea un nuevo usuario """
+        form = CustomUserCreationForm(data=request.data)
+        if form.is_valid():
+            user_data = form.cleaned_data
+            User = get_user_model()
+            user = User.objects.create_user(
+                email=user_data['email'],
+                password=user_data['password1'],  # Django usa password1 para creación
+                name=user_data['name'],
+                surname=user_data['surname'],
+                control_number=user_data['control_number'],
+                age=user_data['age'],
+                tel=user_data['tel'],
+            )
+            return Response({'message': 'Usuario creado con éxito'}, status=status.HTTP_201_CREATED)
 
-    if request.method == "POST" and form.is_valid():
-        user = form.get_user()
-        login(request, user)
-        return redirect('home')
-
-    return render(request, "login.html", {"form": form, "message": message})
-
-
-@login_required
-def home_view(request):
-    return render(request, 'home.html')
-
-def logout_view(request):
-    logout(request)
-    request.session['logout_message'] = {
-        "type": "info",
-        "message": "Se ha cerrado sesión exitosamente",
-        "code": 200,
-        "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8MIbugIhZBykSmQcR0QPcfnPUBOZQ6bm35w&s"
-    }
-    return redirect('login')
+        return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
